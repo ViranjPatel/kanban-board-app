@@ -42,9 +42,31 @@
         }
     </script>
     <style>
-        /* Minimal custom styles for drag and drop */
-        .dragging { opacity: 0.5; }
-        .drag-over { background-color: hsl(210 40% 96.1%); }
+        /* Enhanced drag and drop styles */
+        .dragging { 
+            opacity: 0.3 !important;
+            cursor: grabbing !important;
+        }
+        .drag-over { 
+            background-color: hsl(210 40% 94%) !important;
+            border-color: hsl(222.2 84% 61.8%) !important;
+        }
+        .drag-placeholder {
+            background: hsl(222.2 84% 61.8%);
+            height: 4px;
+            border-radius: 2px;
+            margin: 8px 0;
+        }
+        .sortable-ghost {
+            opacity: 0.4;
+            background: hsl(210 40% 96.1%);
+        }
+        [draggable="true"] {
+            cursor: grab;
+        }
+        [draggable="true"]:active {
+            cursor: grabbing;
+        }
     </style>
 </head>
 <body class="bg-background text-foreground">
