@@ -1,131 +1,116 @@
 # Kanban Board Application
 
-A modern, responsive Kanban board application built with React that helps you manage tasks efficiently.
+A modern, intuitive Kanban board built with React and styled with shadcn/ui components and Tailwind CSS.
 
-## Features
+## ✨ Features
 
-- **Drag and Drop**: Easily move tasks between columns (To Do, In Progress, Done)
-- **Task Management**: Add, delete, and organize tasks
-- **Priority Levels**: Set and toggle between Low, Medium, and High priorities
-- **Persistent Storage**: Tasks are saved to localStorage
-- **Responsive Design**: Works perfectly on desktop and mobile devices
-- **Clean UI**: Modern, minimalist interface with smooth animations
+- **🎯 Intuitive Drag & Drop**: Seamlessly move tasks between columns
+- **🎨 Modern UI**: Clean interface built with shadcn/ui design system
+- **📱 Fully Responsive**: Works perfectly on all devices
+- **🏷️ Priority Management**: Set task priorities (Low, Medium, High) with visual indicators
+- **💾 Persistent Storage**: Tasks saved to localStorage
+- **🚀 Zero Build Process**: Works directly in the browser
 
-## Getting Started
+## 🖼️ UI Features
 
-### Quick Start
+- **Clean Header**: Modern navigation bar with dashboard icon
+- **Smart Task Input**: 
+  - Inline priority selection
+  - Optional description field
+  - One-click task creation
+- **Visual Column States**:
+  - To Do: Circle dashed icon (blue)
+  - In Progress: Loader circle icon (amber)
+  - Done: Check circle icon (green)
+- **Task Cards**:
+  - Priority badges with color coding
+  - Creation date with calendar icon
+  - Hover effects for better interaction
+  - Quick delete button
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ViranjPatel/kanban-board-app.git
-   cd kanban-board-app
-   ```
+## 🚀 Quick Start
 
-2. Open `index.html` in your web browser
-   - No build process required!
-   - Works directly in the browser
-
-### Deployment Options
-
-#### GitHub Pages
-1. Go to Settings → Pages in your repository
-2. Select "Deploy from a branch"
-3. Choose `main` branch and `/ (root)` folder
-4. Save and wait for deployment
-
-#### Netlify
-1. Visit [Netlify](https://www.netlify.com/)
-2. Drag and drop the project folder
-3. Your app will be live instantly!
-
-#### Vercel
-1. Install Vercel CLI: `npm i -g vercel`
-2. Run `vercel` in the project directory
-3. Follow the prompts
-
-## Usage
-
-### Adding Tasks
-1. Enter a task title in the first input field
-2. Optionally add a description
-3. Click "Add Task" or press Enter
-
-### Managing Tasks
-- **Move tasks**: Drag and drop between columns
-- **Change priority**: Click on the priority badge
-- **Delete tasks**: Click the × button on the task card
-
-### Task Priorities
-- 🟢 **Low**: Green badge
-- 🟡 **Medium**: Yellow badge (default)
-- 🔴 **High**: Red badge
-
-## Technology Stack
-
-- **React 18**: For reactive UI components
-- **Pure CSS**: For styling (no frameworks needed)
-- **LocalStorage**: For data persistence
-- **Babel**: For JSX transformation in the browser
-
-## Project Structure
-
+### View Online
+Your Kanban board is deployed at:
 ```
-kanban-board-app/
-├── index.html       # Main HTML file
-├── app.js          # React application code
-├── styles.css      # All styling
-└── README.md       # This file
+https://viranjpatel.github.io/kanban-board-app/
 ```
 
-## Customization
+### Run Locally
+```bash
+git clone https://github.com/ViranjPatel/kanban-board-app.git
+cd kanban-board-app
+# Open index.html in your browser
+```
 
-### Adding More Columns
+## 💻 Technology Stack
+
+- **React 18**: For reactive components
+- **Tailwind CSS**: Utility-first styling
+- **shadcn/ui**: Modern component design system
+- **Lucide Icons**: Beautiful icon set
+- **LocalStorage**: Client-side persistence
+
+## 🎯 Usage
+
+1. **Add Tasks**: 
+   - Enter task title
+   - Add optional description
+   - Select priority level
+   - Click "Add Task"
+
+2. **Manage Tasks**:
+   - Drag tasks between columns
+   - Click X to delete tasks
+   - Tasks automatically save
+
+3. **Priority Levels**:
+   - 🟢 Low: Gray badge
+   - 🔵 Medium: Blue badge (default)
+   - 🔴 High: Red badge
+
+## 🛠️ Customization
+
+### Adding Columns
 Edit the `columns` array in `app.js`:
 ```javascript
 const columns = [
-    { id: 'todo', title: 'To Do', color: '#3498db' },
-    { id: 'inprogress', title: 'In Progress', color: '#f39c12' },
-    { id: 'testing', title: 'Testing', color: '#9b59b6' }, // New column
-    { id: 'done', title: 'Done', color: '#27ae60' }
+    { id: 'todo', title: 'To Do', icon: 'circle-dashed', color: 'text-blue-600' },
+    { id: 'inprogress', title: 'In Progress', icon: 'loader-circle', color: 'text-amber-600' },
+    { id: 'review', title: 'Review', icon: 'eye', color: 'text-purple-600' }, // New
+    { id: 'done', title: 'Done', icon: 'check-circle-2', color: 'text-green-600' }
 ];
 ```
 
-### Changing Colors
-Modify the color values in `styles.css` for different themes.
+### Changing Theme
+The app uses shadcn/ui's default theme. Customize colors in the Tailwind config within `index.html`.
 
-### Adding Features
-Some ideas for enhancements:
-- Due dates for tasks
-- Task assignments
-- Labels/tags
-- Search functionality
-- Export/import tasks
+## 📦 Project Structure
 
-## Browser Support
+```
+kanban-board-app/
+├── index.html       # Main HTML with Tailwind config
+├── app.js          # React application
+├── styles.css      # Minimal custom styles
+└── README.md       # Documentation
+```
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+## 🌐 Deployment
 
-## Contributing
+The app automatically deploys to GitHub Pages via GitHub Actions on every push to main branch.
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
 5. Open a Pull Request
 
-## License
+## 📝 License
 
-This project is open source and available under the [MIT License](LICENSE).
-
-## Acknowledgments
-
-- Built with React
-- Inspired by Trello and other Kanban tools
-- Created for learning and productivity
+Open source under the MIT License.
 
 ---
 
-Made with ❤️ by ViranjPatel
+Built with ❤️ using React and shadcn/ui
