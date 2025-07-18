@@ -11,6 +11,7 @@ const KanbanBoard = () => {
     
     const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '' });
     const [draggedTask, setDraggedTask] = useState(null);
+    const [draggedOverTask, setDraggedOverTask] = useState(null);
     const [selectedPriority, setSelectedPriority] = useState('medium');
     
     const columns = [
@@ -44,7 +45,8 @@ const KanbanBoard = () => {
                 dueDate: newTask.dueDate,
                 status: 'todo',
                 priority: selectedPriority,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                order: tasks.filter(t => t.status === 'todo').length
             };
             setTasks([...tasks, task]);
             setNewTask({ title: '', description: '', dueDate: '' });
@@ -58,42 +60,133 @@ const KanbanBoard = () => {
 
     const handleDragStart = (e, task) => {
         setDraggedTask(task);
-        e.target.style.transition = 'transform 0.2s';
+        e.dataTransfer.effectAllowed = 'move';
+        // Add better visual feedback
         setTimeout(() => {
-            e.target.classList.add('dragging');
-            e.target.style.transform = 'rotate(5deg) scale(0.95)';
+            e.target.style.opacity = '0.4';
+            e.target.style.transform = 'scale(1.02)';
         }, 0);
     };
 
     const handleDragEnd = (e) => {
+        e.target.style.opacity = '';
         e.target.style.transform = '';
-        e.target.classList.remove('dragging');
         setDraggedTask(null);
+        setDraggedOverTask(null);
+        // Remove all drag-over classes
+        document.querySelectorAll('.drag-over').forEach(el => {
+            el.classList.remove('drag-over');
+        });
+        document.querySelectorAll('.drag-over-top').forEach(el => {
+            el.classList.remove('drag-over-top');
+        });
+        document.querySelectorAll('.drag-over-bottom').forEach(el => {
+            el.classList.remove('drag-over-bottom');
+        });
     };
 
     const handleDragOver = (e) => {
         e.preventDefault();
-        e.currentTarget.classList.add('drag-over');
-        e.currentTarget.style.transition = 'background-color 0.3s';
+        e.dataTransfer.dropEffect = 'move';
     };
 
-    const handleDragLeave = (e) => {
-        e.currentTarget.classList.remove('drag-over');
+    const handleDragEnterColumn = (e, status) => {
+        e.preventDefault();
+        if (e.currentTarget.classList.contains('column-drop-zone')) {
+            e.currentTarget.classList.add('drag-over');
+        }
     };
 
-    const handleDrop = (e, status) => {
+    const handleDragLeaveColumn = (e) => {
+        if (e.currentTarget.classList.contains('column-drop-zone')) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+    };
+
+    const handleDragOverTask = (e, task) => {
+        if (!draggedTask || draggedTask.id === task.id) return;
+        
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const height = rect.height;
+        
+        // Remove previous classes
+        e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+        
+        // Add class based on position
+        if (y < height / 2) {
+            e.currentTarget.classList.add('drag-over-top');
+        } else {
+            e.currentTarget.classList.add('drag-over-bottom');
+        }
+        
+        setDraggedOverTask({ task, insertBefore: y < height / 2 });
+    };
+
+    const handleDragLeaveTask = (e) => {
+        e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+    };
+
+    const handleDropOnColumn = (e, status) => {
         e.preventDefault();
         e.currentTarget.classList.remove('drag-over');
         
-        if (draggedTask) {
+        if (draggedTask && !draggedOverTask) {
+            // Dropped on empty column or at the end
+            const columnTasks = tasks.filter(t => t.status === status);
+            const maxOrder = columnTasks.length > 0 ? Math.max(...columnTasks.map(t => t.order || 0)) : -1;
+            
             setTasks(tasks.map(task => 
-                task.id === draggedTask.id ? { ...task, status } : task
+                task.id === draggedTask.id 
+                    ? { ...task, status, order: maxOrder + 1 } 
+                    : task
             ));
         }
     };
 
+    const handleDropOnTask = (e, targetTask) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+        
+        if (!draggedTask || draggedTask.id === targetTask.id) return;
+        
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const insertBefore = y < rect.height / 2;
+        
+        // Reorder tasks
+        let newTasks = [...tasks];
+        const draggedIndex = newTasks.findIndex(t => t.id === draggedTask.id);
+        const targetIndex = newTasks.findIndex(t => t.id === targetTask.id);
+        
+        // Remove dragged task
+        const [removed] = newTasks.splice(draggedIndex, 1);
+        
+        // Update status if dropping in different column
+        removed.status = targetTask.status;
+        
+        // Find new index after removal
+        const newTargetIndex = newTasks.findIndex(t => t.id === targetTask.id);
+        const insertIndex = insertBefore ? newTargetIndex : newTargetIndex + 1;
+        
+        // Insert at new position
+        newTasks.splice(insertIndex, 0, removed);
+        
+        // Update order for all tasks in the column
+        const columnTasks = newTasks.filter(t => t.status === removed.status);
+        columnTasks.forEach((task, index) => {
+            task.order = index;
+        });
+        
+        setTasks(newTasks);
+        setDraggedOverTask(null);
+    };
+
     const getTasksByStatus = (status) => {
-        return tasks.filter(task => task.status === status);
+        return tasks
+            .filter(task => task.status === status)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
     };
 
     const getPriorityClass = (priority) => {
@@ -118,6 +211,22 @@ const KanbanBoard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50/50">
+            <style>{`
+                .drag-over {
+                    background-color: #e0f2fe !important;
+                    border: 2px dashed #3b82f6 !important;
+                }
+                .drag-over-top {
+                    border-top: 3px solid #3b82f6 !important;
+                }
+                .drag-over-bottom {
+                    border-bottom: 3px solid #3b82f6 !important;
+                }
+                .dragging {
+                    cursor: grabbing !important;
+                }
+            `}</style>
+            
             {/* Header */}
             <div className="bg-white border-b">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,7 +301,14 @@ const KanbanBoard = () => {
                     {columns.map(column => {
                         const columnTasks = getTasksByStatus(column.id);
                         return (
-                            <div key={column.id} className="bg-gray-50 rounded-lg p-4">
+                            <div 
+                                key={column.id} 
+                                className="column-drop-zone bg-gray-50 rounded-lg p-4 transition-all duration-200"
+                                onDragOver={handleDragOver}
+                                onDragEnter={(e) => handleDragEnterColumn(e, column.id)}
+                                onDragLeave={handleDragLeaveColumn}
+                                onDrop={(e) => handleDropOnColumn(e, column.id)}
+                            >
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <i data-lucide={column.icon} className={`w-5 h-5 ${column.color}`}></i>
@@ -203,14 +319,9 @@ const KanbanBoard = () => {
                                     </span>
                                 </div>
                                 
-                                <div
-                                    className="space-y-3 min-h-[200px] rounded-md transition-all duration-300"
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, column.id)}
-                                >
+                                <div className="space-y-3 min-h-[400px]">
                                     {columnTasks.length === 0 ? (
-                                        <div className="text-center py-12 text-gray-500 text-sm animate-pulse">
+                                        <div className="text-center py-12 text-gray-500 text-sm">
                                             <i data-lucide="inbox" className="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
                                             Drop tasks here
                                         </div>
@@ -220,10 +331,13 @@ const KanbanBoard = () => {
                                             return (
                                                 <div
                                                     key={task.id}
-                                                    className="bg-white rounded-lg border p-4 cursor-move hover:shadow-md transition-all duration-200 transform hover:-translate-y-1"
+                                                    className="bg-white rounded-lg border p-4 cursor-grab hover:shadow-md transition-all duration-200 transform hover:scale-[1.02]"
                                                     draggable
                                                     onDragStart={(e) => handleDragStart(e, task)}
                                                     onDragEnd={handleDragEnd}
+                                                    onDragOver={(e) => handleDragOverTask(e, task)}
+                                                    onDragLeave={handleDragLeaveTask}
+                                                    onDrop={(e) => handleDropOnTask(e, task)}
                                                 >
                                                     <div className="flex justify-between items-start mb-2">
                                                         <h4 className="font-medium text-gray-900 flex-1">{task.title}</h4>
