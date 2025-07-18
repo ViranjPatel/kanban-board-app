@@ -9,7 +9,7 @@ const KanbanBoard = () => {
         return saved ? JSON.parse(saved) : [];
     });
     
-    const [newTask, setNewTask] = useState({ title: '', description: '' });
+    const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '' });
     const [draggedTask, setDraggedTask] = useState(null);
     const [selectedPriority, setSelectedPriority] = useState('medium');
     
@@ -41,12 +41,13 @@ const KanbanBoard = () => {
                 id: Date.now(),
                 title: newTask.title,
                 description: newTask.description,
+                dueDate: newTask.dueDate,
                 status: 'todo',
                 priority: selectedPriority,
                 createdAt: new Date().toISOString()
             };
             setTasks([...tasks, task]);
-            setNewTask({ title: '', description: '' });
+            setNewTask({ title: '', description: '', dueDate: '' });
             setSelectedPriority('medium');
         }
     };
@@ -57,10 +58,15 @@ const KanbanBoard = () => {
 
     const handleDragStart = (e, task) => {
         setDraggedTask(task);
-        e.target.classList.add('dragging');
+        e.target.style.transition = 'transform 0.2s';
+        setTimeout(() => {
+            e.target.classList.add('dragging');
+            e.target.style.transform = 'rotate(5deg) scale(0.95)';
+        }, 0);
     };
 
     const handleDragEnd = (e) => {
+        e.target.style.transform = '';
         e.target.classList.remove('dragging');
         setDraggedTask(null);
     };
@@ -68,6 +74,7 @@ const KanbanBoard = () => {
     const handleDragOver = (e) => {
         e.preventDefault();
         e.currentTarget.classList.add('drag-over');
+        e.currentTarget.style.transition = 'background-color 0.3s';
     };
 
     const handleDragLeave = (e) => {
@@ -94,6 +101,21 @@ const KanbanBoard = () => {
         return p ? p.color : priorities[1].color;
     };
 
+    const getDueDateStatus = (dueDate) => {
+        if (!dueDate) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(dueDate);
+        due.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) return { text: 'Overdue', class: 'text-red-600 font-medium' };
+        if (diffDays === 0) return { text: 'Due today', class: 'text-orange-600 font-medium' };
+        if (diffDays === 1) return { text: 'Due tomorrow', class: 'text-amber-600' };
+        if (diffDays <= 3) return { text: `${diffDays} days`, class: 'text-yellow-600' };
+        return { text: `${diffDays} days`, class: 'text-gray-600' };
+    };
+
     return (
         <div className="min-h-screen bg-gray-50/50">
             {/* Header */}
@@ -112,7 +134,7 @@ const KanbanBoard = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                     <form onSubmit={addTask} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <input
                                 type="text"
                                 placeholder="What needs to be done?"
@@ -125,6 +147,13 @@ const KanbanBoard = () => {
                                 placeholder="Add a description (optional)"
                                 value={newTask.description}
                                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            />
+                            <input
+                                type="date"
+                                placeholder="Due date"
+                                value={newTask.dueDate}
+                                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             />
                             <div className="flex gap-2">
@@ -175,50 +204,61 @@ const KanbanBoard = () => {
                                 </div>
                                 
                                 <div
-                                    className="space-y-3 min-h-[200px] rounded-md transition-colors"
+                                    className="space-y-3 min-h-[200px] rounded-md transition-all duration-300"
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
                                     onDrop={(e) => handleDrop(e, column.id)}
                                 >
                                     {columnTasks.length === 0 ? (
-                                        <div className="text-center py-12 text-gray-500 text-sm">
+                                        <div className="text-center py-12 text-gray-500 text-sm animate-pulse">
                                             <i data-lucide="inbox" className="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
                                             Drop tasks here
                                         </div>
                                     ) : (
-                                        columnTasks.map(task => (
-                                            <div
-                                                key={task.id}
-                                                className="bg-white rounded-lg border p-4 cursor-move hover:shadow-md transition-shadow"
-                                                draggable
-                                                onDragStart={(e) => handleDragStart(e, task)}
-                                                onDragEnd={handleDragEnd}
-                                            >
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <h4 className="font-medium text-gray-900 flex-1">{task.title}</h4>
-                                                    <button
-                                                        onClick={() => deleteTask(task.id)}
-                                                        className="text-gray-400 hover:text-red-600 transition-colors ml-2"
-                                                    >
-                                                        <i data-lucide="x" className="w-4 h-4"></i>
-                                                    </button>
+                                        columnTasks.map(task => {
+                                            const dueDateStatus = getDueDateStatus(task.dueDate);
+                                            return (
+                                                <div
+                                                    key={task.id}
+                                                    className="bg-white rounded-lg border p-4 cursor-move hover:shadow-md transition-all duration-200 transform hover:-translate-y-1"
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, task)}
+                                                    onDragEnd={handleDragEnd}
+                                                >
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <h4 className="font-medium text-gray-900 flex-1">{task.title}</h4>
+                                                        <button
+                                                            onClick={() => deleteTask(task.id)}
+                                                            className="text-gray-400 hover:text-red-600 transition-colors ml-2"
+                                                        >
+                                                            <i data-lucide="x" className="w-4 h-4"></i>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    {task.description && (
+                                                        <p className="text-sm text-gray-600 mb-3">{task.description}</p>
+                                                    )}
+                                                    
+                                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getPriorityClass(task.priority)}`}>
+                                                            {task.priority}
+                                                        </span>
+                                                        <div className="flex items-center gap-3 text-xs">
+                                                            {dueDateStatus && (
+                                                                <span className={`flex items-center gap-1 ${dueDateStatus.class}`}>
+                                                                    <i data-lucide="clock" className="w-3 h-3"></i>
+                                                                    {dueDateStatus.text}
+                                                                </span>
+                                                            )}
+                                                            <span className="text-gray-500 flex items-center gap-1">
+                                                                <i data-lucide="calendar" className="w-3 h-3"></i>
+                                                                {new Date(task.createdAt).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                
-                                                {task.description && (
-                                                    <p className="text-sm text-gray-600 mb-3">{task.description}</p>
-                                                )}
-                                                
-                                                <div className="flex items-center justify-between">
-                                                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getPriorityClass(task.priority)}`}>
-                                                        {task.priority}
-                                                    </span>
-                                                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <i data-lucide="calendar" className="w-3 h-3"></i>
-                                                        {new Date(task.createdAt).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>
